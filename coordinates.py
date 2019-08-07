@@ -32,7 +32,7 @@ class XYZfile():
             return atomtypes
 
     def coordinates(self, frame):
-        print(F" {self.nat}\n {self.energies[frame].strip()}")
+        print(F" {self.nat}\n {' '.join(self.energies[frame].split())}")
         for at in self._frames[frame]:
             print(F"{at.split('_')[0].ljust(3)} {self._frames[frame][at][0]} {self._frames[frame][at][1]} {self._frames[frame][at][2]}")#   {:.3f}")
 
