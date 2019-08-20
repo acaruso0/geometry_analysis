@@ -1,76 +1,100 @@
+import os
 import numpy as np
+import database as db
+from database import Atom
 
 class XYZfile():
-    def __init__(self, filename):
-        self.frames, self.energies, self.nat = self.loadall(filename)
+    """
+    Class containing the XYZ trajectory file.
+    """
+    def __init__(self, filename, periodic_table, boxside = 0):
+        self._periodic_table = periodic_table
+        self.atoms, self.frames, self.energies, self.nat = self.loadall(filename)
         self.nframes = self.nframes()
         self.atomtypes = self.atomtypes()
         self.atcount = self.atcount()
+        self.pbc = boxside
 
     def loadall(self, filename):
+        """
+        Loads the XYZ trajectory file.
+        
+        Parameters
+        ----------
+        filename: str
+                Name of the XYZ file.
+
+        Returns
+        -------
+        atoms: list
+                List of int of the atomic numbers in order of appearance.
+        frames: list
+                List of np.arrays of the coordinates.
+        energies: list
+                List of str containing the comment line of the XYZ file.
+        nat: int
+                Number of atoms.
+        """
         with open(filename, 'r') as xyzfile:
             spl_file = xyzfile.readlines()
-        frames, energies = [], []
+        atoms, frames, energies = [], [], []
         nat = int(spl_file[0])
         splitted_traj = [spl_file[line_n*(nat + 2):line_n*(nat + 2) + (nat + 2)] for line_n in
                 range(int(len(spl_file) / (nat + 2)))]
+        for at in splitted_traj[0][2:]:
+            atom = at.split()
+            atoms.append(self._periodic_table[db.get_name(atom[0], self._periodic_table)].atnum)
         for frame in splitted_traj:
             conf = Frame(frame, en = True)
             frames.append(conf.coordset)
             energies.append(conf.energy)
-        return frames, energies, nat
+        return atoms, frames, energies, nat
 
     def nframes(self):
+        """
+        Counts the frames in the trajectory.
+
+        Returns
+        -------
+        int
+                Number of frames in the XYZ file.
+        """
         return len(self.frames)
 
-    def atcount(self):
-        atcount = {}
-        for atomtype in self.atomtypes:
-            it = 0
-            for at in self.frames[0]:
-                if atomtype == at.split('_')[0]:
-                    it += 1
-            atcount[atomtype] = it
-        return atcount
-
     def atomtypes(self):
-        if not self.frames:
-            print("Make sure to load a trajectory first!")
+        return set(self.atoms)
+
+    def atcount(self):
+        """ 
+        Counts the atom frequency.
+
+        Returns
+        -------
+        atcount: dict
+                Dict with the atom labels as keys and the frequencies as values.
+        """
+        at_cnt = {}
+        for at_typ in self.atomtypes:
+            cnt = 0
+            for atom in self.atoms:
+                if atom == at_typ:
+                    cnt += 1
+            at_cnt[db.get_name(at_typ, self._periodic_table)] = cnt
+            del cnt
+        return at_cnt
+
+    def coordprint(self, frame, save = False):
+        if save:
+            with open('output.xyz', 'a+') as output:
+                output.write(F" {self.nat}\n {' '.join(self.energies[frame].split())}\n")
+                for at, coord in enumerate(self.frames[frame]):
+                    label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                    output.write(F'{label} {coord[0]} {coord[1]} {coord[2]}\n')
         else:
-            atomtypes = set()
-            for at in self.frames[0]:
-                atomtypes.add(at.split('_')[0])
-            return atomtypes
-
-    def coordprint(self, frame, label = False):
-        print(F" {self.nat}\n {' '.join(self.energies[frame].split())}")
-        for at in self.frames[frame]:
-            if label == False:
-                print(F"{at.split('_')[0].ljust(3)} {self.frames[frame][at][0]} {self.frames[frame][at][1]} {self.frames[frame][at][2]}")#   {:.3f}")
-            else:
-                print(F"{at.split('_')[0]}.{at.split('_')[1]} {self.frames[frame][at][0]} {self.frames[frame][at][1]} {self.frames[frame][at][2]}")
-
-    def getatom(self, in_frame, end_frame, *args):
-        arglist, sliced = [], []
-        if args:
-            for arg in args:
-                arg = arg.split('.')
-                if ':' in arg[1]:
-                    argrange = range(int(arg[1].split(':')[0]), int(arg[1].split(':')[1]) + 1)
-                arglist += [arg[0] + "_" + str(n) for n in list(argrange)]
-        else:
-            arglist = list(self.frames[0].keys())#[in_frame:end_frame+1][0].keys())
-
-        for frame in range(in_frame, end_frame + 1):
-            sl_atoms = {}
-            for atlabel in arglist:
-                sl_atoms[atlabel] = self.frames[frame][atlabel]
-            sliced.append(sl_atoms)
-            
-        return sliced
-
-#    def __del__(self):
-#        self.handle.close()
+            print(F" {self.nat}\n {' '.join(self.energies[frame].split())}")
+            for at, coord in enumerate(self.frames[frame]):
+                label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                print(F'{label} {coord[0]} {coord[1]} {coord[2]}')
 
 class Frame():
     def __init__(self, conf, en = False):
@@ -81,13 +105,8 @@ class Frame():
             self.energy = 0
 
     def coordset(self, coords):
-        coordset = {}
+        coordset = []
         for at in coords:
-            count = 1
             atom = at.split()
-            for label in coordset:
-                if atom[0] + "_" in label:
-                    count += 1
-            coordset[atom[0] + "_" + str(count)] = np.array([float(coord) for coord in atom[1:]])
-
+            coordset.append(np.array([float(coord) for coord in atom[1:]]))
         return coordset
