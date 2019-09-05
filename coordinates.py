@@ -130,7 +130,7 @@ class Frame():
         else:
             self.energy = 0
 
-    def coordset(self, coords, file_t):
+    def coordset(self, coords):
         coordset = []
         for at in coords:
             atom = at.split()
