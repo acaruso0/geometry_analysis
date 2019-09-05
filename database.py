@@ -42,6 +42,7 @@ if __name__ == "__main__":
             "phoshporus": Atom("P", 15, 30.974),
             "sulfur": Atom("S", 16, 32.06),
             "chlorine": Atom("Cl", 17, 35.45),
+            "caesium": Atom("Cs", 55, 132.91),
             }
 
     with open('periodic_table.pickle', 'wb') as handle:

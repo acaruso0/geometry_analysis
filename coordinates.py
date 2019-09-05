@@ -7,7 +7,7 @@ class XYZfile():
     """
     Class containing the XYZ trajectory file.
     """
-    def __init__(self, filename, periodic_table, boxside = 0):
+    def __init__(self, filename, periodic_table, boxside = (0, 0, 0)):
         self._periodic_table = periodic_table
         self.atoms, self.frames, self.energies, self.nat = self.loadall(filename)
         self.nframes = self.nframes()
@@ -83,6 +83,32 @@ class XYZfile():
             del cnt
         return at_cnt
 
+    def wrap_h2o(self, frame):
+
+        def pbc(oxygen, hydrogen):
+            xx = np.linalg.norm(oxygen[0] - hydrogen[0])
+            yy = np.linalg.norm(oxygen[1] - hydrogen[1])
+            zz = np.linalg.norm(oxygen[2] - hydrogen[2])
+            
+            delta = [xx, yy, zz]
+            delta = np.array([delta[i] - round(delta[i] / self.pbc[i]) * self.pbc[i] for i in range(3)])
+            print(delta)
+
+            hydrogen = oxygen + delta
+            print(hydrogen)
+            return hydrogen
+
+        for at in range(self.nat):
+            if self.atoms[at] == 8:
+                self.frames[frame][at + 1] = pbc(self.frames[frame][at], self.frames[frame][at + 1])
+                self.frames[frame][at + 2] = pbc(self.frames[frame][at], self.frames[frame][at + 2])
+
+        with open('wrapped.xyz', 'a+') as output:
+            output.write(F" {self.nat}\n {' '.join(self.energies[frame].split())}\n")
+            for at, coord in enumerate(self.frames[frame]):
+                label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                output.write(F'{label} {coord[0]} {coord[1]} {coord[2]}\n')
+
     def coordprint(self, frame, save = False):
         if save:
             with open('output.xyz', 'a+') as output:
@@ -104,9 +130,36 @@ class Frame():
         else:
             self.energy = 0
 
-    def coordset(self, coords):
+    def coordset(self, coords, file_t):
         coordset = []
         for at in coords:
             atom = at.split()
             coordset.append(np.array([float(coord) for coord in atom[1:]]))
         return coordset
+
+class History():
+    def __init__(self, filename, periodic_table):
+        self._periodic_table = periodic_table
+        self.atoms, self.frames, self.nat, self.pbc = self.loadall(filename)
+
+    def loadall(self, filename):
+        with open(filename, 'r') as hisfile:
+            spl_file = hisfile.readlines()
+        atoms, frames = [], []
+        pbc = (float(spl_file[1].split()[0]), float(spl_file[2].split()[1]), float(spl_file[3].split()[2]))
+        nat = int(spl_file[0].split()[2])
+        splitted_traj = [spl_file[line_n*(2*nat + 4):line_n*(2*nat + 4) + (2*nat + 4)] for line_n in range(int(len(spl_file) / (2*nat + 4)))]
+        for at_n in range(nat):
+            atom = splitted_traj[0][4:][2*at_n].split()[0]
+
+            if atom == 'OW' or atom == 'HW':
+                atom = atom[0]
+
+            atoms.append(self._periodic_table[db.get_name(atom, self._periodic_table)].atnum)
+        for frame in splitted_traj:
+            coordset = []
+            for at_n in range(nat):
+                coords = frame[4:][2*at_n + 1].split()
+                coordset.append(np.array([float(coord) for coord in coords]))
+            frames.append(coordset)
+        return atoms, frames, nat, pbc
