@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from database import Atom, get_name
+from database import periodic_table, get_name
 import geometry_analysis as geom
 
 import matplotlib.pyplot as plt
@@ -11,14 +11,14 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
 
     #! ENTER PBC CONDITION, THROW ERROR
 
-    atom1 = get_name(atom1, xyzfile._periodic_table)
-    atom2 = get_name(atom2, xyzfile._periodic_table)
+    atom1 = get_name(atom1)
+    atom2 = get_name(atom2)
 
     at1_cnt = xyzfile.atcount[atom1]
     at2_cnt = xyzfile.atcount[atom2]
     
-    atom1 = xyzfile._periodic_table[atom1].atnum
-    atom2 = xyzfile._periodic_table[atom2].atnum
+    atom1 = periodic_table[atom1].atnum
+    atom2 = periodic_table[atom2].atnum
 
     dr = (stop - start) / nbins
 
@@ -74,17 +74,17 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
 
 #def cdf(xyzfile, atom1, atom2, r_range, th_range):
 def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
-    atom1 = get_name(atom1, xyzfile._periodic_table)
-    atom2 = get_name(atom2, xyzfile._periodic_table)
-    atom3 = get_name(atom3, xyzfile._periodic_table)
+    atom1 = get_name(atom1)
+    atom2 = get_name(atom2)
+    atom3 = get_name(atom3)
 
     at1_cnt = xyzfile.atcount[atom1]
     at2_cnt = xyzfile.atcount[atom2]
     at3_cnt = xyzfile.atcount[atom3]
     
-    atom1 = xyzfile._periodic_table[atom1].atnum
-    atom2 = xyzfile._periodic_table[atom2].atnum
-    atom3 = xyzfile._periodic_table[atom3].atnum
+    atom1 = periodic_table[atom1].atnum
+    atom2 = periodic_table[atom2].atnum
+    atom3 = periodic_table[atom3].atnum
     
     triples = []
     for at1_n, at1 in enumerate(xyzfile.atoms):

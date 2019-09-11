@@ -1,14 +1,13 @@
 import os
 import numpy as np
 import database as db
-from database import Atom
+from database import periodic_table
 
 class XYZfile():
     """
     Class containing the XYZ trajectory file.
     """
-    def __init__(self, filename, periodic_table, boxside = (0, 0, 0)):
-        self._periodic_table = periodic_table
+    def __init__(self, filename, boxside = (0, 0, 0)):
         self.atoms, self.frames, self.energies, self.nat = self.loadall(filename)
         self.nframes = self.nframes()
         self.atomtypes = self.atomtypes()
@@ -43,9 +42,9 @@ class XYZfile():
                 range(int(len(spl_file) / (nat + 2)))]
         for at in splitted_traj[0][2:]:
             atom = at.split()
-            atoms.append(self._periodic_table[db.get_name(atom[0], self._periodic_table)].atnum)
+            atoms.append(periodic_table[db.get_name(atom[0])].atnum)
         for frame in splitted_traj:
-            conf = Frame(frame, en = True)
+            conf = XYZFrame(frame, en = True)
             frames.append(conf.coordset)
             energies.append(conf.energy)
         return atoms, frames, energies, nat
@@ -79,7 +78,7 @@ class XYZfile():
             for atom in self.atoms:
                 if atom == at_typ:
                     cnt += 1
-            at_cnt[db.get_name(at_typ, self._periodic_table)] = cnt
+            at_cnt[db.get_name(at_typ)] = cnt
             del cnt
         return at_cnt
 
@@ -106,7 +105,7 @@ class XYZfile():
         with open('wrapped.xyz', 'a+') as output:
             output.write(F" {self.nat}\n {' '.join(self.energies[frame].split())}\n")
             for at, coord in enumerate(self.frames[frame]):
-                label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                label = periodic_table[db.get_name(self.atoms[at])].label
                 output.write(F'{label} {coord[0]} {coord[1]} {coord[2]}\n')
 
     def coordprint(self, frame, save = False):
@@ -114,15 +113,15 @@ class XYZfile():
             with open('output.xyz', 'a+') as output:
                 output.write(F" {self.nat}\n {' '.join(self.energies[frame].split())}\n")
                 for at, coord in enumerate(self.frames[frame]):
-                    label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                    label = periodic_table[db.get_name(self.atoms[at])].label
                     output.write(F'{label} {coord[0]} {coord[1]} {coord[2]}\n')
         else:
             print(F" {self.nat}\n {' '.join(self.energies[frame].split())}")
             for at, coord in enumerate(self.frames[frame]):
-                label = self._periodic_table[db.get_name(self.atoms[at], self._periodic_table)].label
+                label = periodic_table[db.get_name(self.atoms[at])].label
                 print(F'{label} {coord[0]} {coord[1]} {coord[2]}')
 
-class Frame():
+class XYZFrame():
     def __init__(self, conf, en = False):
         self.coordset = self.coordset(conf[2:])
         if en == True:
@@ -138,8 +137,7 @@ class Frame():
         return coordset
 
 class History():
-    def __init__(self, filename, periodic_table):
-        self._periodic_table = periodic_table
+    def __init__(self, filename):
         self.atoms, self.frames, self.nat, self.pbc = self.loadall(filename)
 
     def loadall(self, filename):
@@ -155,7 +153,7 @@ class History():
             if atom == 'OW' or atom == 'HW':
                 atom = atom[0]
 
-            atoms.append(self._periodic_table[db.get_name(atom, self._periodic_table)].atnum)
+            atoms.append(periodic_table[db.get_name(atom)].atnum)
         for frame in splitted_traj:
             coordset = []
             for at_n in range(nat):

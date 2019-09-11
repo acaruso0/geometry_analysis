@@ -1,4 +1,3 @@
-from database import *
 from coordinates import *
 from correlation import *
 import math
