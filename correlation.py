@@ -3,6 +3,8 @@ import numpy as np
 from database import periodic_table, get_name
 import geometry_analysis as geom
 
+import corr_cpp
+
 import matplotlib.pyplot as plt
 
 def rdf(xyzfile, atom1, atom2, start, stop, nbins):
@@ -21,7 +23,11 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
     atom2 = periodic_table[atom2].atnum
 
     dr = (stop - start) / nbins
+    
+    couples = corr_cpp.couples(xyzfile.atoms, atom1, atom2)
+    dists = corr_cpp.dists(xyzfile.frames, xyzfile.pbc, couples)
 
+    '''
     couples = []
     for at1_n, at1 in enumerate(xyzfile.atoms):
         if at1 == atom1:
@@ -50,6 +56,7 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
             d_ij = math.sqrt(delta)
 
             dists.append(d_ij)
+    '''
 
     rdf = list(np.histogram(dists, nbins, range=(start, stop)))
 
