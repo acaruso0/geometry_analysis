@@ -14,6 +14,21 @@ class XYZfile():
         self.atcount = self.atcount()
         self.pbc = boxside
 
+    class XYZFrame():
+        def __init__(self, conf, en = False):
+            self.coordset = self.coordset(conf[2:])
+            if en == True:
+                self.energy = conf[1]
+            else:
+                self.energy = 0
+
+        def coordset(self, coords):
+            coordset = []
+            for at in coords:
+                atom = at.split()
+                coordset.append(np.array([float(coord) for coord in atom[1:]]))
+            return coordset
+
     def loadall(self, filename):
         """
         Loads the XYZ trajectory file.
@@ -44,7 +59,7 @@ class XYZfile():
             atom = at.split()
             atoms.append(periodic_table[db.get_name(atom[0])].atnum)
         for frame in splitted_traj:
-            conf = XYZFrame(frame, en = True)
+            conf = self.XYZFrame(frame, en = True)
             frames.append(conf.coordset)
             energies.append(conf.energy)
         return atoms, frames, energies, nat
@@ -114,27 +129,12 @@ class XYZfile():
                 output.write(F" {self.nat}\n {' '.join(self.energies[frame].split())}\n")
                 for at, coord in enumerate(self.frames[frame]):
                     label = periodic_table[db.get_name(self.atoms[at])].label
-                    output.write(F'{label} {coord[0]} {coord[1]} {coord[2]}\n')
+                    output.write(F'{label:<2} {coord[0]:13.8f} {coord[1]:13.8f} {coord[2]:13.8f}\n')
         else:
             print(F" {self.nat}\n {' '.join(self.energies[frame].split())}")
             for at, coord in enumerate(self.frames[frame]):
                 label = periodic_table[db.get_name(self.atoms[at])].label
-                print(F'{label} {coord[0]} {coord[1]} {coord[2]}')
-
-class XYZFrame():
-    def __init__(self, conf, en = False):
-        self.coordset = self.coordset(conf[2:])
-        if en == True:
-            self.energy = conf[1]
-        else:
-            self.energy = 0
-
-    def coordset(self, coords):
-        coordset = []
-        for at in coords:
-            atom = at.split()
-            coordset.append(np.array([float(coord) for coord in atom[1:]]))
-        return coordset
+                print(F'{label:<2} {coord[0]:13.8f} {coord[1]:13.8f} {coord[2]:13.8f}')
 
 class History():
     def __init__(self, filename):
