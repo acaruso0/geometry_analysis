@@ -2,20 +2,22 @@ import os
 import numpy as np
 import database as db
 from database import periodic_table
+import math
 
 class XYZfile():
     """
     Class containing the XYZ trajectory file.
     """
     def __init__(self, filename, boxside = (0, 0, 0)):
+        self.pbc = boxside
         self.atoms, self.frames, self.energies, self.nat = self.loadall(filename)
         self.nframes = self.nframes()
         self.atomtypes = self.atomtypes()
         self.atcount = self.atcount()
-        self.pbc = boxside
 
     class XYZFrame():
-        def __init__(self, conf, en = False):
+        def __init__(self, conf, boxside, en = False):
+            self.pbc = boxside
             self.coordset = self.coordset(conf[2:])
             if en == True:
                 self.energy = conf[1]
@@ -26,7 +28,21 @@ class XYZfile():
             coordset = []
             for at in coords:
                 atom = at.split()
-                coordset.append(np.array([float(coord) for coord in atom[1:]]))
+                coord = np.array([float(coord) for coord in atom[1:]])
+
+                ################################
+                ### MINIMUM IMAGE CONVENTION ###
+                ################################
+                
+                if self.pbc != (0, 0, 0):
+                    for q in range(3):
+                        coord[q] -= math.floor(coord[q] / self.pbc[q]) * self.pbc[q]
+
+                ################################
+                ################################
+
+                #coordset.append(np.array([float(coord) for coord in atom[1:]]))
+                coordset.append(coord)
             return coordset
 
     def loadall(self, filename):
@@ -59,7 +75,7 @@ class XYZfile():
             atom = at.split()
             atoms.append(periodic_table[db.get_name(atom[0])].atnum)
         for frame in splitted_traj:
-            conf = self.XYZFrame(frame, en = True)
+            conf = self.XYZFrame(frame, self.pbc, en = True)
             frames.append(conf.coordset)
             energies.append(conf.energy)
         return atoms, frames, energies, nat

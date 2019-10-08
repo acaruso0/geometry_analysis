@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from database import periodic_table, get_name
-import geometry_analysis as geom
+#import geometry_analysis as geom
 
 import corr_cpp
 
@@ -25,8 +25,8 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
     dr = (stop - start) / nbins
     
     couples = corr_cpp.couples(xyzfile.atoms, atom1, atom2)
-    dists = corr_cpp.dists(xyzfile.frames, xyzfile.pbc, couples)
-
+    dists = corr_cpp.rdf_dists(xyzfile.frames, xyzfile.pbc, couples)
+    
     '''
     couples = []
     for at1_n, at1 in enumerate(xyzfile.atoms):
@@ -92,7 +92,16 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
     atom1 = periodic_table[atom1].atnum
     atom2 = periodic_table[atom2].atnum
     atom3 = periodic_table[atom3].atnum
+
+    triples = corr_cpp.triples(xyzfile.atoms, atom1, atom2, atom3)
+    print("Triples generated.")
+    distang = corr_cpp.cdf_distang(xyzfile.frames, xyzfile.pbc, triples)
+    print("Distances and angles calculated.")
     
+    angles = distang[1]
+    dists = distang[0]
+
+    '''
     triples = []
     for at1_n, at1 in enumerate(xyzfile.atoms):
         if at1 == atom1:
@@ -105,7 +114,7 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
                             triples.append((at1_n, at2_n, at3_n))
 
     print("Triples generated.")
-    print(triples)
+##    print(triples)
     dists = []
     angles = []
     for frame in xyzfile.frames:
@@ -125,15 +134,17 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
             ############################
             # Minimum Image Convention #
             ############################
-
-            dx13 = dx13 - round(dx12 / xyzfile.pbc[0]) * xyzfile.pbc[0]
-            dy13 = dy13 - round(dy12 / xyzfile.pbc[1]) * xyzfile.pbc[1]
-            dz13 = dz13 - round(dz12 / xyzfile.pbc[2]) * xyzfile.pbc[2]
+            dx13 = dx13 - round(dx13 / xyzfile.pbc[0]) * xyzfile.pbc[0]
+            dy13 = dy13 - round(dy13 / xyzfile.pbc[1]) * xyzfile.pbc[1]
+            dz13 = dz13 - round(dz13 / xyzfile.pbc[2]) * xyzfile.pbc[2]
 
             dx12 = dx12 - round(dx12 / xyzfile.pbc[0]) * xyzfile.pbc[0]
             dy12 = dy12 - round(dy12 / xyzfile.pbc[1]) * xyzfile.pbc[1]
             dz12 = dz12 - round(dz12 / xyzfile.pbc[2]) * xyzfile.pbc[2]
 
+            dx23 = dx23 - round(dx23 / xyzfile.pbc[0]) * xyzfile.pbc[0]
+            dy23 = dy23 - round(dy23 / xyzfile.pbc[1]) * xyzfile.pbc[1]
+            dz23 = dz23 - round(dz23 / xyzfile.pbc[2]) * xyzfile.pbc[2]
             ############################
 
             delta12 = dx12**2 + dy12**2 + dz12**2
@@ -145,14 +156,14 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
             d_23 = math.sqrt(delta23)
 
             dists.append(d_12)
-            print(d_13, d_12, d_23)
+##            print(d_13, d_12, d_23)
             angles.append(geom.cosrule(d_23, d_12, d_13, deg = True))
+    '''
 
-    print("Distances and angles calculated.")
+    #print("Distances and angles calculated.")
 
-    print(len(angles))
-    print(angles)
-
+##    print(len(angles))
+##    print(angles)
     cdf, dist, angle = np.histogram2d(dists, angles, bins=(r_range[2], th_range[2]), range=(r_range[:2], th_range[:2]))
 
 #    with open('before_norm.dat', 'w+') as outfile:
@@ -179,14 +190,14 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
     plt_cdf = []
     for row in range(len(cdf)):
         for col in range(len(cdf[0])):
-#            cdf[row][col] /= (norm*volume((dist[row], dist[row + 1]), (angle[col], angle[col + 1])))
+            cdf[row][col] /= (norm*volume((dist[row], dist[row + 1]), (angle[col], angle[col + 1])))
             plt_dist.append(dist[row])
             plt_angle.append(angle[col])
             plt_cdf.append(cdf[row][col])
     print("Normalized.")
     #################
 
-    print(sum(plt_cdf))
+##    print(sum(plt_cdf))
 
 #    cdf = cdf.T
     fig, ax = plt.subplots()
@@ -194,7 +205,7 @@ def cdf(xyzfile, atom1, atom2, atom3, r_range, th_range):
 #    ax.imshow(cdf, interpolation='nearest', origin='low', extent=[dist[0], dist[-1], angle[0], angle[-1]])
     plt.show()
 
-#    with open('out_cdf.dat', 'w+') as outfile:
-#        for row in range(len(cdf)):
-#            for col in range(len(cdf[0])):
-#                outfile.write(F'{dist[row]} {angle[col]} {cdf[row][col]}\n')
+    with open('out_cdf.dat', 'w+') as outfile:
+        for row in range(len(cdf)):
+            for col in range(len(cdf[0])):
+                outfile.write(F'{dist[row]} {angle[col]} {cdf[row][col]}\n')

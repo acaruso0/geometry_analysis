@@ -21,7 +21,7 @@ std::vector<std::vector<unsigned int>> couples(std::vector<int> atoms, int atom1
     return couples;
 }
 
-std::vector<double> dists(std::vector<std::vector<Eigen::VectorXd>> frames,
+std::vector<double> rdf_dists(std::vector<std::vector<Eigen::VectorXd>> frames,
                 std::vector<double> pbc,
                 std::vector<std::vector<unsigned int>> couples) {
     std::vector<double> dists;
