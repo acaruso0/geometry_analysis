@@ -38,6 +38,6 @@ A code to calculate a rdf would look like:
 ```python
 import geometry_analysis as geom
 
-xyzfile = geom.XYZfile('traj.xyz', (19.37, 19.37, 22.35))
+xyzfile = geom.XYZfile("traj.xyz", (19.37, 19.37, 22.35))
 geom.rdf(xyzfile, 'Cs', 'O', 1, 10, 300, "rdf_out.dat")
 ```
