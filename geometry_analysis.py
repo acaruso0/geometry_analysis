@@ -2,7 +2,7 @@ from coordinates import *
 from correlation import *
 import math
 import numpy as np
-import quaternion as quat
+#import quaternion as quat
 
 def cosrule(a, b, c, deg = False):
     alpha = math.acos((b**2 + c**2 - a**2) / (2*b*c))
@@ -18,6 +18,7 @@ def angle3p(a, b, c, deg = False):
     alpha = cosrule(s_bc, s_ab, s_ca, deg)
     return alpha
 
+'''
 def rotate(v, axis, theta):
     theta *= (math.pi / 180)
     vector = np.array([0.] + v)
@@ -30,3 +31,4 @@ def rotate(v, axis, theta):
     v_prime = q * vec * np.conjugate(q)
 
     return v_prime.imag
+'''
