@@ -7,7 +7,7 @@ import corr_cpp
 
 import matplotlib.pyplot as plt
 
-def rdf(xyzfile, atom1, atom2, start, stop, nbins):
+def rdf(xyzfile, atom1, atom2, start, stop, nbins, outfile):
     assert start >= 0, "The starting value of the rdf has to be positive."
     assert stop > start, "The final value of the rdf has to be greater than the starting one."
 
@@ -75,7 +75,7 @@ def rdf(xyzfile, atom1, atom2, start, stop, nbins):
 
     #################
 
-    with open('out_rdf.dat', 'w+') as outfile:
+    with open(str(outfile) + '.dat', 'w+') as outfile:
         for n in range(len(rdf[0])):
             outfile.write(F'{rdf[1][n]} {rdf[0][n]}\n')
 
